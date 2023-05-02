@@ -14,6 +14,24 @@ source('src/setup.R', local = TRUE)
 
 
 
-# 01 - data import
-#------------------
+# 01 - set paths and parameters
+#-------------------------------
+
+# input path to point cloud tiles
+point_clouds <- paste0(raw_data_dir, 'dsm_cloud')
+
+# input path to DTM tiles
+dtm <- paste0(raw_data_dir, 'dtm_tiles')
+
+# output path for DSM and nDSM .tif files
+out_path_dsm <- paste0(output_dir, 'DSM')
+out_path_ndsm <- paste0(output_dir, 'nDSM')
+
+# EPSG code for input data coordinate system
+# ERTS89/UTM Zone 32 N = 25832, ERTS89/UTM Zone 33 N = 25833
+epsg <- 25832
+
+# define region name
+region <- 'solling'
+
 

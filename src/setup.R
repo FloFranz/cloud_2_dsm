@@ -81,10 +81,10 @@ list.files(recursive = TRUE, include.dirs = TRUE)
 #---------------------------
 
 # define raw data directory
-raw_data_dir <- 'data/raw_data'
+raw_data_dir <- 'data/raw_data/'
 
 # define processed data directory
-processed_data_dir <- 'data/processed_data'
+processed_data_dir <- 'data/processed_data/'
 
 # define output directory
 output_dir <- 'output'
