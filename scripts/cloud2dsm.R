@@ -35,3 +35,45 @@ epsg <- 25832
 region <- 'solling'
 
 
+
+# 02 - preparations for calculations
+#-----------------------------------
+
+# remove empty files (< 1500 bytes)
+files <- list.files(point_clouds)
+
+for (f in files) {
+  
+  if (file.size(paste0(point_clouds, '/', f)) < 1500) {
+    
+    file.remove(paste0(point_clouds, '/', f))
+    print('Empty point cloud files removed')
+    
+  }
+}
+
+# rename point clouds and DTM files
+source('src/rename_files.R', local = TRUE)
+
+rename_files(dir_path = point_clouds,
+             epsg = epsg,
+             region = region)
+
+rename_files(dir_path = dtm,
+             epsg = epsg,
+             region = region)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
