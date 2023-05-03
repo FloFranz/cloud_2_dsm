@@ -63,6 +63,49 @@ rename_files(dir_path = dtm,
              epsg = epsg,
              region = region)
 
+# list common tiles between DTM and point cloud
+# create list of point clouds/DTM without filename extension and without DSM_/DTM_
+
+# create a list of point cloud files
+point_list <- list.files(point_clouds, pattern = '\\.laz$|\\.las$', full.names = FALSE)
+point_list <- substr(point_list, 5, nchar(point_list) - 4)
+
+# create a list of DTM files
+dtm_list <- list.files(dtm, pattern = '\\.laz$|\\.las$', full.names = FALSE)
+dtm_list <- substr(dtm_list, 5, nchar(dtm_list) - 4)
+
+# remove all .lax files in DTM directory
+filelist <- list.files(dtm, pattern = '\\.lax$', full.names = TRUE)
+file.remove(filelist)
+
+# identify file format of point cloud files
+pc_format <- substr(list.files(point_clouds)[1],
+                    nchar(list.files(point_clouds)[1]) - 3,
+                    nchar(list.files(point_clouds)[1]))
+
+# identify file format of DTM files
+dtm_format <- substr(list.files(dtm)[1],
+                     nchar(list.files(dtm)[1]) - 3,
+                     nchar(list.files(dtm)[1]))
+
+# find tiles that occur in point cloud and in DTM
+common_list <- dplyr::intersect(point_list, dtm_list)
+
+# list tiles in point cloud and DTM with DSM_/DTM_ and without filename extension
+cloud_common <- paste0('DSM_', common_list)
+dtm_common <- paste0('DTM_', common_list)
+
+# print results
+print(paste('point cloud format is', pc_format))
+print(paste('point cloud list:', point_list))
+print(paste('DTM format is', dtm_format))
+print(paste('DTM list:', dtm_list))
+print(paste('common list:', common_list))
+print(paste('length common list:', length(common_list)))
+print(paste('cloud common:', cloud_common))
+print(paste('DTM common:', dtm_common))
+
+
 
 
 
