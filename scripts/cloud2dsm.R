@@ -95,6 +95,9 @@ common_list <- dplyr::intersect(point_list, dtm_list)
 cloud_common <- paste0('DSM_', common_list)
 dtm_common <- paste0('DTM_', common_list)
 
+# create a list of file names in common_list
+pc_common_tile_list <- paste0(point_clouds, "/DSM_", common_list, pc_format)
+
 # print results
 print(paste('point cloud format is', pc_format))
 print(paste('point cloud list:', point_list))
@@ -104,6 +107,7 @@ print(paste('common list:', common_list))
 print(paste('length common list:', length(common_list)))
 print(paste('cloud common:', cloud_common))
 print(paste('DTM common:', dtm_common))
+print(paste("point cloud common tile list:", pc_common_tile_list))
 
 
 
