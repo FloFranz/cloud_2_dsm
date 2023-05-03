@@ -34,6 +34,9 @@ epsg <- 25832
 # define region name
 region <- 'solling'
 
+# set minimum area (in %) required for a tile to be processed
+min_area = 10
+
 
 
 # 02 - preparations for calculations
@@ -96,7 +99,7 @@ cloud_common <- paste0('DSM_', common_list)
 dtm_common <- paste0('DTM_', common_list)
 
 # create a list of file names in common_list
-pc_common_tile_list <- paste0(point_clouds, "/DSM_", common_list, pc_format)
+pc_common_tile_list <- paste0(point_clouds, '/DSM_', common_list, pc_format)
 
 # print results
 print(paste('point cloud format is', pc_format))
@@ -108,6 +111,73 @@ print(paste('length common list:', length(common_list)))
 print(paste('cloud common:', cloud_common))
 print(paste('DTM common:', dtm_common))
 print(paste("point cloud common tile list:", pc_common_tile_list))
+
+# find files containing data for at least 10% of tile area
+
+# reduce list of files to those that cover at least 100000 m2 (10 % of the tile area)
+cat('finding files that are smaller than 10 % of the size of the biggest file',
+    'to check if their data covers at least 10 % of tile area (100 000 sqm)')
+
+file_sizes <- sapply(pc_common_tile_list, file.size)
+threshold_size <- max(file_sizes) * 0.1
+
+tiles_lasinfo <- character()
+
+for (i in seq_along(pc_common_tile_list)) {
+  
+  if (file_sizes[i] < threshold_size) {
+    
+    tiles_lasinfo <- c(tiles_lasinfo, basename(pc_common_tile_list[i]))
+    
+  }
+}
+
+if (length(tiles_lasinfo) > 0) {
+  
+  cat("there are some small files:", paste(tiles_lasinfo, collapse = ", "))
+  
+  # check the area covered by each laz-file and include in list when area covered >= 100000 m2
+  remove_list <- character()
+  
+  for (f in tiles_lasinfo) {
+  
+    filename <- file.path(point_clouds, paste0(f))
+    las <- lidR::readLAS(filename)
+    covered_area <- sum(terra::area(las))
+    
+    if (covered_area < 100000 * min_area / 100) {
+      
+      remove_list <- c(remove_list, substr(f, 5, nchar(f) - 4))
+      
+    }
+  }
+  
+  # check if there were any "small files" that went through the 10 % area filter
+  if (length(remove_list) == 0) {
+    
+    print('all small tiles cover enough area')
+    
+  } else {
+    
+    cat("some small tiles don't cover enough area and will be ignored:", paste(remove_list, collapse = ", "))
+    
+    # update common list removing tiles that do not cover enough area
+    common_list <- setdiff(common_list, remove_list)
+    cat("updated common list after removing files with not enough area cover:", paste(common_list, collapse = ", "))
+  
+    # from the new common list, update cloud, DTM, and point cloud tile list
+    cloud_common <- paste0('DSM_', common_list)
+    dtm_common <- paste0('DTM_', common_list)
+    pc_tile_list <- paste0(pc_common_tile_list, '/DSM_', cloud_common, pc_format)
+    
+  }
+  
+} else {
+  
+  print('no small files')
+  
+}
+
 
 
 
