@@ -66,8 +66,8 @@ rename_files(dir_path = dtm,
              epsg = epsg,
              region = region)
 
-# list common tiles between DTM and point cloud
-# create list of point clouds/DTM without filename extension and without DSM_/DTM_
+# *** list common tiles between DTM and point cloud
+# create list of point clouds/DTM without filename extension and without DSM_/DTM_ ***
 
 # create a list of point cloud files
 point_list <- list.files(point_clouds, pattern = '\\.laz$|\\.las$', full.names = FALSE)
@@ -112,7 +112,7 @@ print(paste('cloud common:', cloud_common))
 print(paste('DTM common:', dtm_common))
 print(paste("point cloud common tile list:", pc_common_tile_list))
 
-# find files containing data for at least 10% of tile area
+# *** find files containing data for at least 10% of tile area ***
 
 # reduce list of files to those that cover at least 100000 m2 (10 % of the tile area)
 cat('finding files that are smaller than 10 % of the size of the biggest file',
@@ -168,7 +168,7 @@ if (length(tiles_lasinfo) > 0) {
     # from the new common list, update cloud, DTM, and point cloud tile list
     cloud_common <- paste0('DSM_', common_list)
     dtm_common <- paste0('DTM_', common_list)
-    pc_tile_list <- paste0(pc_common_tile_list, '/DSM_', cloud_common, pc_format)
+    pc_common_tile_list <- paste0(pc_common_tile_list, '/DSM_', cloud_common, pc_format)
     
   }
   
@@ -177,6 +177,68 @@ if (length(tiles_lasinfo) > 0) {
   print('no small files')
   
 }
+
+# *** ensure equal point spacing for input ***
+
+# read las files
+print('calculating point spacing')
+
+las_files <- list.files(point_clouds, 
+                        pattern = paste0(cloud_common[1:3], pc_format, collapse = '|'), full.names = TRUE)
+
+las_files_list <- c()
+
+for (i in seq_along(las_files)) {
+  
+  las_file <- las_files[i]
+  las <- lidR::readLAS(las_file)
+  las_files_list[[i]] <- las
+  
+}
+
+
+# check point spacing
+point_space_list <- c()
+
+for (las_file in las_files_list) {
+  
+  point_space_list <- append(point_space_list,
+                             lidR::cloud_metrics(las_file, func = ~sqrt(1/lidR::density(las_file))))
+  
+}
+
+# produce point clouds with point spacing = 0.5 if necessary
+if (!file.exists(paste0(processed_data_dir, 'thinned_pc'))) {
+  
+  dir.create(paste0(processed_data_dir, 'thinned_pc'))
+  
+} else {
+  
+  invisible()
+  
+}
+
+out_path_thinned_pc <- paste0(processed_data_dir, 'thinned_pc/')
+
+for (i in seq_along(point_space_list)) {
+  
+  if (point_space_list[i] < 0.5) {
+    
+    print('thinning point clouds')
+    
+    thinned_pc <- lidR::decimate_points(las_files_list[[i]], lidR::highest(res = 0.5))
+    
+    lidR::writeLAS(thinned_pc, paste0(out_path_thinned_pc, cloud_common[i], pc_format))
+    
+  } else {
+    
+    file.copy(pc_common_tile_list[i], out_path_thinned_pc)
+    
+  }
+}
+
+print('thinning done')
+
 
 
 

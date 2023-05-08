@@ -87,7 +87,7 @@ raw_data_dir <- 'data/raw_data/'
 processed_data_dir <- 'data/processed_data/'
 
 # define output directory
-output_dir <- 'output'
+output_dir <- 'output/'
 
 
 
