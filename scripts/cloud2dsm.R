@@ -250,23 +250,70 @@ print('thinning done')
 # 03 - calculate DSM & nDSM
 #---------------------------
 
-# ...
-dsm <- lidR::rasterize_canopy()
+# calculate DSMs from the thinned point clouds
+# pit-free algorithm is used for rasterization
+print('calculate DSMs')
 
+dsm_list <- lapply(thinned_pc_list,
+                   FUN = function(x)
+                     lidR::rasterize_canopy(x,
+                                            res = 1,
+                                            algorithm = lidR::pitfree(thresholds = c(0, 10, 20, 30),
+                                            max_edge = c(0, 1.5))))
 
+for (dsm in seq_along(dsm_list)) {
+  
+  terra::writeRaster(dsm_list[[dsm]], paste0(out_path_dsm, '/', cloud_common[dsm], '.tif'))
+  
+}
 
+# list common DTM files
+dtm_files <- list.files(dtm,
+                        pattern = paste0(dtm_common[1:3], pc_format, collapse = '|'), full.names = TRUE)
 
+dtm_common_list <- c()
 
+for (i in seq_along(dtm_files)) {
+  
+  dtm_file <- dtm_files[i]
+  dtms <- lidR::readLAS(dtm_file)
+  dtm_common_list[[i]] <- dtms
+  
+}
 
+# rasterize the DTM files using invert distance weighting
+dtm_raster_list <- lapply(dtm_common_list,
+                          FUN = function(x)
+                            lidR::rasterize_terrain(x,
+                                                    res = 1,
+                                                    algorithm = lidR::knnidw(),
+                                                    use_class = 0))
 
+# calculate nDSMs by normalizing the thinned point clouds with the DTM files
+# pit-free algorithm is used for rasterization again
+print('calculate nDSMs')
 
+nlas_list <- mapply(FUN = function(x, y) lidR::normalize_height(x, y),
+                    thinned_pc_list, dtm_raster_list)
 
+ndsm_list <- lapply(nlas_list,
+                    FUN = function(x)
+                      lidR::rasterize_canopy(x,
+                                             res = 1,
+                                             algorithm = lidR::pitfree(thresholds = c(0, 10, 20, 30),
+                                                                       max_edge = c(0, 1.5))))
 
+# remove points less than 0 (set to 0)
+# remove points greater than 55 (set to 55)
+for (ndsm in seq_along(ndsm_list)) {
+  
+  ndsm_list[[ndsm]][ndsm_list[[ndsm]] < 0] <- 0
+  ndsm_list[[ndsm]][ndsm_list[[ndsm]] > 55] <- 55
+  
+}
 
-
-
-
-
-
-
-
+for (ndsm in seq_along(ndsm_list)) {
+  
+  terra::writeRaster(ndsm_list[[ndsm]], paste0(out_path_ndsm, '/', 'n', cloud_common[ndsm], '.tif'))
+  
+}
