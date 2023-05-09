@@ -218,6 +218,7 @@ if (!file.exists(paste0(processed_data_dir, 'thinned_pc'))) {
   
 }
 
+thinned_pc_list <- c()
 out_path_thinned_pc <- paste0(processed_data_dir, 'thinned_pc/')
 
 for (i in seq_along(point_space_list)) {
@@ -227,10 +228,13 @@ for (i in seq_along(point_space_list)) {
     print('thinning point clouds')
     
     thinned_pc <- lidR::decimate_points(las_files_list[[i]], lidR::highest(res = 0.5))
+    thinned_pc_list <- append(thinned_pc_list, thinned_pc)
     
     lidR::writeLAS(thinned_pc, paste0(out_path_thinned_pc, cloud_common[i], pc_format))
     
   } else {
+    
+    thinned_pc_list <- append(thinned_pc_list, las_files_list[[i]])
     
     file.copy(pc_common_tile_list[i], out_path_thinned_pc)
     
@@ -238,6 +242,16 @@ for (i in seq_along(point_space_list)) {
 }
 
 print('thinning done')
+
+# rm(las_files_list)
+
+
+
+# 03 - calculate DSM & nDSM
+#---------------------------
+
+# ...
+dsm <- lidR::rasterize_canopy()
 
 
 
