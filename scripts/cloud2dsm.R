@@ -263,7 +263,8 @@ dsm_list <- lapply(thinned_pc_list,
 
 for (dsm in seq_along(dsm_list)) {
   
-  terra::writeRaster(dsm_list[[dsm]], paste0(out_path_dsm, '/', cloud_common[dsm], '.tif'))
+  terra::writeRaster(dsm_list[[dsm]], paste0(out_path_dsm, '/', cloud_common[dsm], '.tif'),
+                     overwrite = TRUE)
   
 }
 
@@ -296,6 +297,31 @@ print('calculate nDSMs')
 nlas_list <- mapply(FUN = function(x, y) lidR::normalize_height(x, y),
                     thinned_pc_list, dtm_raster_list)
 
+# filter the normalized point clouds 
+for (nlas in seq_along(nlas_list)) {
+  
+  print(paste("Processing nlas:", nlas))
+  
+  # remove points less than -1 and greater than 55
+  nlas_list[[nlas]] <- lidR::filter_poi(nlas_list[[nlas]], Z > -1, Z < 55)
+  
+  # classify and remove isolated points (max. 40 points in a 10 x 10 x 10 voxcel)
+  nlas_list[[nlas]] <- lidR::classify_noise(nlas_list[[nlas]],
+                                            algorithm = lidR::ivf(res = 10,
+                                                                  n = 40))
+  
+  nlas_list[[nlas]] <- lidR::filter_poi(nlas_list[[nlas]], Classification != 18)
+  
+  # classify and remove isolated points (max. 8 points in a 3 x 3 x 3 voxcel)
+  nlas_list[[nlas]] <- lidR::classify_noise(nlas_list[[nlas]],
+                                            algorithm = lidR::ivf(res = 3,
+                                                                  n = 8))
+  
+  nlas_list[[nlas]] <- lidR::filter_poi(nlas_list[[nlas]], Classification != 18)
+  
+}
+
+# rasterization with pitfree algorithm
 ndsm_list <- lapply(nlas_list,
                     FUN = function(x)
                       lidR::rasterize_canopy(x,
@@ -303,17 +329,23 @@ ndsm_list <- lapply(nlas_list,
                                              algorithm = lidR::pitfree(thresholds = c(0, 10, 20, 30),
                                                                        max_edge = c(0, 1.5))))
 
-# remove points less than 0 (set to 0)
-# remove points greater than 55 (set to 55)
+# rasterization with point-to-raster algorithm
+ndsm_list <- lapply(nlas_list,
+                    FUN = function(x)
+                      lidR::rasterize_canopy(x,
+                                             res = 1,
+                                             algorithm = lidR::p2r(subcircle = 0.2, na.fill = tin())))
+
+# remove points less than 0.1 m (set to 0)
 for (ndsm in seq_along(ndsm_list)) {
   
-  ndsm_list[[ndsm]][ndsm_list[[ndsm]] < 0] <- 0
-  ndsm_list[[ndsm]][ndsm_list[[ndsm]] > 55] <- 55
+  ndsm_list[[ndsm]][ndsm_list[[ndsm]] < 0.1] <- 0
   
 }
 
 for (ndsm in seq_along(ndsm_list)) {
   
-  terra::writeRaster(ndsm_list[[ndsm]], paste0(out_path_ndsm, '/', 'n', cloud_common[ndsm], '.tif'))
+  terra::writeRaster(ndsm_list[[ndsm]], paste0(out_path_ndsm, '/', 'n', cloud_common[ndsm], '.tif'),
+                     overwrite = TRUE)
   
 }
