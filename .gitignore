@@ -48,7 +48,7 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-# tif, laz/las, log, dbf, dtm, shp, shx files
+# tif, laz/las, log, dbf, dtm, shp, shx, png files
 *.tif
 *.laz
 *.las
@@ -57,3 +57,4 @@ rsconnect/
 *.dtm
 *.shp
 *.shx
+*.png
