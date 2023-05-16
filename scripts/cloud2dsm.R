@@ -7,6 +7,8 @@
 # Contact:      florian.franz@nw-fva.de
 #-------------------------------------------------------------
 
+start.time <- Sys.time()
+
 
 
 # source setup script
@@ -24,8 +26,12 @@ point_clouds <- paste0(raw_data_dir, 'dsm_cloud')
 dtm <- paste0(raw_data_dir, 'dtm_tiles')
 
 # output path for DSM and nDSM .tif files
-out_path_dsm <- paste0(output_dir, 'DSM')
-out_path_ndsm <- paste0(output_dir, 'nDSM')
+out_path_dsm_tif <- paste0(output_dir, 'DSM')
+out_path_ndsm_tif <- paste0(output_dir, 'nDSM')
+
+# output path for DSM and nDSM .laz files
+out_path_dsm_laz <- paste0(output_dir, 'DSM_laz')
+out_path_ndsm_laz <- paste0(output_dir, 'nDSM_laz')
 
 # EPSG code for input data coordinate system
 # ERTS89/UTM Zone 32 N = 25832, ERTS89/UTM Zone 33 N = 25833
@@ -184,7 +190,7 @@ if (length(tiles_lasinfo) > 0) {
 print('calculating point spacing')
 
 las_files <- list.files(point_clouds, 
-                        pattern = paste0(cloud_common[1:3], pc_format, collapse = '|'), full.names = TRUE)
+                        pattern = paste0(cloud_common, pc_format, collapse = '|'), full.names = TRUE)
 
 las_files_list <- c()
 
@@ -254,23 +260,33 @@ print('thinning done')
 # pit-free algorithm is used for rasterization
 print('calculate DSMs')
 
+
+
+# dsm_list <- lapply(thinned_pc_list,
+#                    FUN = function(x)
+#                      lidR::rasterize_canopy(x,
+#                                             res = 1,
+#                                             algorithm = lidR::pitfree(thresholds = c(0, 10, 20, 30),
+#                                             max_edge = c(0, 1.5))))
+
 dsm_list <- lapply(thinned_pc_list,
                    FUN = function(x)
                      lidR::rasterize_canopy(x,
                                             res = 1,
-                                            algorithm = lidR::pitfree(thresholds = c(0, 10, 20, 30),
-                                            max_edge = c(0, 1.5))))
+                                            algorithm = lidR::p2r(subcircle = 0.2, na.fill = tin())))
+# reprod test
+dsm_test <- lidR::rasterize_canopy(thinned_pc_list[[2]], res = 1, algorithm = lidR::p2r(subcircle = 0.25, na.fill = lidR::tin()))
 
 for (dsm in seq_along(dsm_list)) {
   
-  terra::writeRaster(dsm_list[[dsm]], paste0(out_path_dsm, '/', cloud_common[dsm], '.tif'),
+  terra::writeRaster(dsm_list[[dsm]], paste0(out_path_dsm_tif, '/', cloud_common[dsm], '.tif'),
                      overwrite = TRUE)
   
 }
 
 # list common DTM files
 dtm_files <- list.files(dtm,
-                        pattern = paste0(dtm_common[1:3], pc_format, collapse = '|'), full.names = TRUE)
+                        pattern = paste0(dtm_common, pc_format, collapse = '|'), full.names = TRUE)
 
 dtm_common_list <- c()
 
@@ -322,12 +338,12 @@ for (nlas in seq_along(nlas_list)) {
 }
 
 # rasterization with pitfree algorithm
-ndsm_list <- lapply(nlas_list,
-                    FUN = function(x)
-                      lidR::rasterize_canopy(x,
-                                             res = 1,
-                                             algorithm = lidR::pitfree(thresholds = c(0, 10, 20, 30),
-                                                                       max_edge = c(0, 1.5))))
+# ndsm_list <- lapply(nlas_list,
+#                     FUN = function(x)
+#                       lidR::rasterize_canopy(x,
+#                                              res = 1,
+#                                              algorithm = lidR::pitfree(thresholds = c(0, 10, 20, 30),
+#                                                                        max_edge = c(0, 1.5))))
 
 # rasterization with point-to-raster algorithm
 ndsm_list <- lapply(nlas_list,
@@ -345,7 +361,16 @@ for (ndsm in seq_along(ndsm_list)) {
 
 for (ndsm in seq_along(ndsm_list)) {
   
-  terra::writeRaster(ndsm_list[[ndsm]], paste0(out_path_ndsm, '/', 'n', cloud_common[ndsm], '.tif'),
+  terra::writeRaster(ndsm_list[[ndsm]], paste0(out_path_ndsm_tif, '/', 'n', cloud_common[ndsm], '.tif'),
                      overwrite = TRUE)
   
 }
+
+
+
+# ------------------------------------------
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+time.taken
+
+sessionInfo()
