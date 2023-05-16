@@ -274,7 +274,8 @@ dsm_list <- lapply(thinned_pc_list,
                      lidR::rasterize_canopy(x,
                                             res = 1,
                                             algorithm = lidR::p2r(subcircle = 0.2, na.fill = tin())))
-# reprod test
+
+# reproducible example
 dsm_test <- lidR::rasterize_canopy(thinned_pc_list[[2]], res = 1, algorithm = lidR::p2r(subcircle = 0.25, na.fill = lidR::tin()))
 
 for (dsm in seq_along(dsm_list)) {
