@@ -14,10 +14,10 @@
 
 # create directory called 'data' with subdirectories
 # 'raw_data', 'processed_data', and 'metadata'
-if (!file.exists(paste('data')) &
-    (!file.exists(paste('data/raw_data/dsm_cloud')) &
-     (!file.exists(paste('data/raw_data/dtm_tiles')) &
-      (!file.exists(paste('data/processed_data')) &
+if (!file.exists(paste('data')) |
+    (!file.exists(paste('data/raw_data/dsm_cloud')) |
+     (!file.exists(paste('data/raw_data/dtm_tiles')) |
+      (!file.exists(paste('data/processed_data')) |
        (!file.exists(paste('data/metadata'))))))) {
   
   dir.create('data')
@@ -66,10 +66,10 @@ if (!file.exists(paste('scripts'))) {
 }
 
 # create directory called 'output'
-if (!file.exists(paste('output')) &
-    (!file.exists(paste('output/DSM')) &
-     (!file.exists(paste('output/nDSM')) &
-      (!file.exists(paste('output/DSM_laz')) &
+if (!file.exists(paste('output')) |
+    (!file.exists(paste('output/DSM')) |
+     (!file.exists(paste('output/nDSM')) |
+      (!file.exists(paste('output/DSM_laz')) |
        (!file.exists(paste('output/nDSM_laz'))))))) {
   
   dir.create('output')

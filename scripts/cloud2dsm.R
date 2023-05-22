@@ -190,7 +190,7 @@ if (length(tiles_lasinfo) > 0) {
 print('calculating point spacing')
 
 las_files <- list.files(point_clouds, 
-                        pattern = paste0(cloud_common, pc_format, collapse = '|'), full.names = TRUE)
+                        pattern = paste0(cloud_common[1:3], pc_format, collapse = '|'), full.names = TRUE)
 
 las_files_list <- c()
 
@@ -213,19 +213,7 @@ for (las_file in las_files_list) {
   
 }
 
-# produce point clouds with point spacing = 0.5 if necessary
-if (!file.exists(paste0(processed_data_dir, 'thinned_pc'))) {
-  
-  dir.create(paste0(processed_data_dir, 'thinned_pc'))
-  
-} else {
-  
-  invisible()
-  
-}
-
 thinned_pc_list <- c()
-out_path_thinned_pc <- paste0(processed_data_dir, 'thinned_pc/')
 
 for (i in seq_along(point_space_list)) {
   
@@ -236,13 +224,13 @@ for (i in seq_along(point_space_list)) {
     thinned_pc <- lidR::decimate_points(las_files_list[[i]], lidR::highest(res = 0.5))
     thinned_pc_list <- append(thinned_pc_list, thinned_pc)
     
-    lidR::writeLAS(thinned_pc, paste0(out_path_thinned_pc, cloud_common[i], pc_format))
+    lidR::writeLAS(thinned_pc, paste0(out_path_dsm_laz, '/', cloud_common[i], pc_format))
     
   } else {
     
     thinned_pc_list <- append(thinned_pc_list, las_files_list[[i]])
     
-    file.copy(pc_common_tile_list[i], out_path_thinned_pc)
+    file.copy(pc_common_tile_list[i], paste0(out_path_dsm_laz, '/'))
     
   }
 }
@@ -256,8 +244,9 @@ print('thinning done')
 # 03 - calculate DSM & nDSM
 #---------------------------
 
+# *** DSMs ***
+
 # calculate DSMs from the thinned point clouds
-# pit-free algorithm is used for rasterization
 print('calculate DSMs')
 
 
@@ -269,21 +258,55 @@ print('calculate DSMs')
 #                                             algorithm = lidR::pitfree(thresholds = c(0, 10, 20, 30),
 #                                             max_edge = c(0, 1.5))))
 
+# dsm_list <- lapply(thinned_pc_list,
+#                    FUN = function(x)
+#                      lidR::rasterize_canopy(x,
+#                                             res = 1,
+#                                             algorithm = lidR::p2r(subcircle = 0.5, na.fill = tin())))
+# 
+# dsm_list <- lapply(seq_along(thinned_pc_list), function(i) {
+#   tryCatch({
+#     lidR::rasterize_canopy(thinned_pc_list[[i]], res = 1, algorithm = lidR::p2r(subcircle = 0.5, na.fill = tin()))
+#   }, error = function(e) {
+#     cat("Error occurred in element", i, "of thinned_pc_list\n")
+#     return(NULL)
+#   })
+# })
+# 
+# for (dsm in seq_along(dsm_list)) {
+#   
+#   terra::writeRaster(dsm_list[[dsm]], paste0(out_path_dsm_tif, '/', cloud_common[dsm], '.tif'),
+#                      overwrite = TRUE)
+#   
+# }
+
+
+# test for one las file
+# dsm_test <- lidR::rasterize_canopy(thinned_pc_list[[3]], res = 1, algorithm = lidR::p2r(subcircle = 0.2, na.fill = lidR::tin()))
+
+# rasterization with point-to-raster algorithm
 dsm_list <- lapply(thinned_pc_list,
                    FUN = function(x)
                      lidR::rasterize_canopy(x,
                                             res = 1,
-                                            algorithm = lidR::p2r(subcircle = 0.2, na.fill = tin())))
+                                            algorithm = lidR::p2r(subcircle = 0.2), pkg = 'terra'))
 
-# reproducible example
-dsm_test <- lidR::rasterize_canopy(thinned_pc_list[[2]], res = 1, algorithm = lidR::p2r(subcircle = 0.25, na.fill = lidR::tin()))
+# fill NAs (3 x 3 m moving window)
+fill.na <- function(x, i=5) { if (is.na(x)[i]) { return(mean(x, na.rm = TRUE)) } else { return(x[i]) }}
+w <- matrix(1, 3, 3)
 
-for (dsm in seq_along(dsm_list)) {
+dsm_list_filled_NA <- lapply(dsm_list,
+                             FUN = function(x)
+                               terra::focal(x, w, fun = fill.na))
+
+for (dsm in seq_along(dsm_list_filled_NA)) {
   
-  terra::writeRaster(dsm_list[[dsm]], paste0(out_path_dsm_tif, '/', cloud_common[dsm], '.tif'),
+  terra::writeRaster(dsm_list_filled_NA[[dsm]], paste0(out_path_dsm_tif, '/', cloud_common[dsm], '.tif'),
                      overwrite = TRUE)
   
 }
+
+# *** nDSMs ***
 
 # list common DTM files
 dtm_files <- list.files(dtm,
@@ -307,8 +330,7 @@ dtm_raster_list <- lapply(dtm_common_list,
                                                     algorithm = lidR::knnidw(),
                                                     use_class = 0))
 
-# calculate nDSMs by normalizing the thinned point clouds with the DTM files
-# pit-free algorithm is used for rasterization again
+# calculate nDSMs by normalizing the thinned point clouds with the DTM filesin
 print('calculate nDSMs')
 
 nlas_list <- mapply(FUN = function(x, y) lidR::normalize_height(x, y),
@@ -335,6 +357,9 @@ for (nlas in seq_along(nlas_list)) {
                                                                   n = 8))
   
   nlas_list[[nlas]] <- lidR::filter_poi(nlas_list[[nlas]], Classification != 18)
+  
+  # write the filtered normalized point clouds to disk
+  lidR::writeLAS(nlas_list[[nlas]], paste0(out_path_ndsm_laz, '/', 'n', cloud_common[nlas], pc_format))
   
 }
 
