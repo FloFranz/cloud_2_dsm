@@ -190,7 +190,7 @@ if (length(tiles_lasinfo) > 0) {
 print('calculating point spacing')
 
 las_files <- list.files(point_clouds, 
-                        pattern = paste0(cloud_common[1:3], pc_format, collapse = '|'), full.names = TRUE)
+                        pattern = paste0(cloud_common, pc_format, collapse = '|'), full.names = TRUE)
 
 las_files_list <- c()
 
