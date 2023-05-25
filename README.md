@@ -6,6 +6,7 @@ Calculation of digital surface models from image-based point clouds.
 The generation of surface models from 3D point clouds is a widely used method for further derivation of structural parameters in the context of forest related studies. Here, image-based point clouds are used to calculate digital surface models (DSM) and, with the additional use of digital terrain models (DTM), normalized digital surface models (nDSM). The latter are particularly suitable for forestry studies because they allow modeling of the canopy surface.
 
 The script 'cloud2dsm.R' is based on a previous script, which was developed within the scope of the "F3 - Flächendeckende Fernerkundungsbasierte Forstliche Strukturdaten" (F3- Area-wide remote sensing based forest structural data) project by project partners Forest Research Institute of Baden-Württemberg (Forstliche Versuchs- und Forschungsanstalt Baden-Württemberg – FVA) and Northwest German Forest Research Institute (Nordwestdeutsche Forstliche Versuchsanstalt – NW-FVA). For further information click [here](https://www.waldwissen.net/de/technik-und-planung/waldinventur/f3-fernerkundungsbasierte-walddaten). However, the [lidR](https://github.com/r-lidar/lidR) package by Jean-Romain Roussel and David Auty is used here for calculating DSM and nDSM.
+Furthermore, the calculated DSMs and nDSMs are compared with the results from the previous script in 'comparing_dsms_and_ndsms.R'.
 
 ## Further information about the topic
 
