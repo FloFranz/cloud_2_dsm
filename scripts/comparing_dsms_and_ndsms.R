@@ -246,15 +246,3 @@ legend("topright", legend = c("nDSM_ref", "nDSM_new"), col = c("blue", "green"),
 for (i in 1:nrow(df_stats)) {
   segments(i, df_stats$ndsm_ref_max[i], i, df_stats$ndsm_max[i], col = "red", lty = "dashed")
 }
-
-
-
-
-
-
-
-
-
-
-
-
