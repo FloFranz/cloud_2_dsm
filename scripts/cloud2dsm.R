@@ -202,7 +202,6 @@ for (i in seq_along(las_files)) {
   
 }
 
-
 # check point spacing
 point_space_list <- c()
 
@@ -216,28 +215,29 @@ for (las_file in las_files_list) {
 thinned_pc_list <- c()
 
 for (i in seq_along(point_space_list)) {
-  
+
   if (point_space_list[i] < 0.5) {
-    
+
     print('thinning point clouds')
-    
+
     thinned_pc <- lidR::decimate_points(las_files_list[[i]], lidR::highest(res = 0.5))
     thinned_pc_list <- append(thinned_pc_list, thinned_pc)
-    
+
     lidR::writeLAS(thinned_pc, paste0(out_path_dsm_laz, '/', cloud_common[i], pc_format))
-    
+
   } else {
-    
+
     thinned_pc_list <- append(thinned_pc_list, las_files_list[[i]])
-    
+
     file.copy(pc_common_tile_list[i], paste0(out_path_dsm_laz, '/'))
-    
+
   }
 }
 
 print('thinning done')
 
-# rm(las_files_list)
+rm(las_files_list)
+gc()
 
 
 
@@ -262,7 +262,7 @@ print('calculate DSMs')
 #                    FUN = function(x)
 #                      lidR::rasterize_canopy(x,
 #                                             res = 1,
-#                                             algorithm = lidR::p2r(subcircle = 0.5, na.fill = tin())))
+#                                             algorithm = lidR::p2r(subcircle = 0.2, na.fill = tin())))
 # 
 # dsm_list <- lapply(seq_along(thinned_pc_list), function(i) {
 #   tryCatch({
@@ -274,17 +274,17 @@ print('calculate DSMs')
 # })
 # 
 # for (dsm in seq_along(dsm_list)) {
-#   
+# 
 #   terra::writeRaster(dsm_list[[dsm]], paste0(out_path_dsm_tif, '/', cloud_common[dsm], '.tif'),
 #                      overwrite = TRUE)
-#   
+# 
 # }
 
 
 # test for one las file
 # dsm_test <- lidR::rasterize_canopy(thinned_pc_list[[3]], res = 1, algorithm = lidR::p2r(subcircle = 0.2, na.fill = lidR::tin()))
 
-# rasterization with point-to-raster algorithm
+#rasterization with point-to-raster algorithm
 dsm_list <- lapply(thinned_pc_list,
                    FUN = function(x)
                      lidR::rasterize_canopy(x,
@@ -300,10 +300,10 @@ dsm_list_filled_NA <- lapply(dsm_list,
                                terra::focal(x, w, fun = fill.na))
 
 for (dsm in seq_along(dsm_list_filled_NA)) {
-  
+
   terra::writeRaster(dsm_list_filled_NA[[dsm]], paste0(out_path_dsm_tif, '/', cloud_common[dsm], '.tif'),
                      overwrite = TRUE)
-  
+
 }
 
 # *** nDSMs ***
