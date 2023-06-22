@@ -15,12 +15,14 @@
 # create directory called 'data' with subdirectories
 # 'raw_data', 'processed_data', and 'metadata'
 if (!file.exists(paste('data')) |
-    (!file.exists(paste('data/raw_data/dsm_cloud')) |
-     (!file.exists(paste('data/raw_data/dtm_tiles')) |
-      (!file.exists(paste('data/processed_data')) |
-       (!file.exists(paste('data/metadata'))))))) {
+    (!file.exists(paste('data/raw_data')) |
+     (!file.exists(paste('data/raw_data/dsm_cloud')) |
+      (!file.exists(paste('data/raw_data/dtm_tiles')) |
+       (!file.exists(paste('data/processed_data')) |
+        (!file.exists(paste('data/metadata')))))))) {
   
   dir.create('data')
+  dir.create('data/raw_data')
   dir.create('data/raw_data/dsm_cloud')
   dir.create('data/raw_data/dtm_tiles')
   dir.create('data/processed_data')
